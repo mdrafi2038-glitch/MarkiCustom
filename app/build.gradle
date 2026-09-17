@@ -7,7 +7,7 @@ android {
         applicationId 'com.example.salestracker'
         minSdk 23
         targetSdk 34
-        versionCode 2
-        versionName '1.1'
+        versionCode project.findProperty('VERSION_CODE')?.toString()?.toInteger() ?: 3
+        versionName project.findProperty('VERSION_NAME')?.toString() ?: '1.2'
     }
 }
