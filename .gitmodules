@@ -1,0 +1,3 @@
+[submodule "9drive/upstream"]
+	path = 9drive/upstream
+	url = https://github.com/zenhosta/9drive.git
