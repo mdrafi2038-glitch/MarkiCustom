@@ -1,9 +1,11 @@
 {$DOMAIN} {
   encode gzip
   handle /api/* { reverse_proxy backend:4000 }
-  handle /connected-accounts/* { reverse_proxy backend:4000 }
+  handle /public/* { reverse_proxy backend:4000 }
   handle /auth/* { reverse_proxy backend:4000 }
-  handle /files/* { reverse_proxy backend:4000 }
-  handle /uploads/* { reverse_proxy backend:4000 }
+  handle /api-keys/* { reverse_proxy backend:4000 }
+  handle /provider-configs/* { reverse_proxy backend:4000 }
+  handle /connected-accounts/* { reverse_proxy backend:4000 }
+  handle /storage/* { reverse_proxy backend:4000 }
   handle { reverse_proxy frontend:80 }
 }
