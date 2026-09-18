@@ -1,27 +1,27 @@
-# 9Drive deployment plan
+# 9Drive VPS + Docker deployment
 
-## Components
+Prerequisites: Linux VPS, Docker Engine + Compose plugin, Git, and DNS pointing your domain to the VPS.
 
-- Frontend: React + Vite
-- Backend: Express + TypeScript
-- Database: MySQL + Prisma
-- Storage: Google Drive and S3-compatible storage
-- Containerization: Docker / Docker Compose
+Deploy:
 
-## Required secrets
+    git clone --branch 9drive --recurse-submodules https://github.com/mdrafi2038-glitch/MarkiCustom.git
+    cd MarkiCustom/9drive
+    cp .env.docker.example .env
+    nano .env
+    chmod +x deploy.sh
+    ./deploy.sh
 
-Do not commit real passwords, OAuth secrets, JWT secrets, encryption keys, or API tokens. Put them in the server's environment or GitHub/VPS secret store.
+Set strong unique values for database passwords, JWT_ACCESS_SECRET and TOKEN_ENCRYPTION_KEY. Never commit .env.
 
-Typical configuration includes:
+Google OAuth callback: https://YOUR_DOMAIN/connected-accounts/google/callback
 
-- DATABASE_URL
-- APP_PORT
-- FRONTEND_URL
-- JWT_ACCESS_SECRET
-- TOKEN_ENCRYPTION_KEY
-- GOOGLE_CLIENT_ID
-- GOOGLE_CLIENT_SECRET
-- GOOGLE_REDIRECT_URI
-- VITE_API_URL
+Operations: docker compose ps; docker compose logs -f backend; docker compose logs -f frontend; docker compose logs -f mysql; docker compose restart
 
-See the upstream README for the current complete configuration and deployment commands.
+Do not run `docker compose down -v` unless you intentionally want to remove persistent database data.
+
+Updates:
+    git pull origin 9drive
+    git submodule update --init --recursive
+    ./deploy.sh
+
+Back up the MySQL volume before production updates.
