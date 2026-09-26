@@ -1,42 +1,170 @@
 package com.memotracker.app;
-import android.app.*;import android.os.*;import android.Manifest;import android.content.*;import android.content.pm.PackageManager;import android.graphics.*;import android.view.*;import android.widget.*;import android.bluetooth.*;import java.io.*;import java.text.*;import java.util.*;import org.json.*;
-public class MainActivity extends Activity{
- LinearLayout list;TextView total;SharedPreferences p;JSONObject d=new JSONObject();JSONArray ps=new JSONArray();String day;
- int dp(int n){return(int)(n*getResources().getDisplayMetrics().density+.5f);}
- TextView t(String s,float z,boolean b){TextView v=new TextView(this);v.setText(s);v.setTextSize(z);v.setTextColor(Color.rgb(25,45,42));v.setTypeface(null,b?1:0);return v;}
- Button b(String s){Button x=new Button(this);x.setText(s);x.setAllCaps(false);x.setTextColor(Color.WHITE);x.setBackgroundColor(Color.rgb(0,105,92));return x;}
- public void onCreate(Bundle x){super.onCreate(x);p=getSharedPreferences("memo",0);day=new SimpleDateFormat("yyyy-MM-dd",Locale.US).format(new Date());load();ui();}
- void load(){try{d=new JSONObject(p.getString("data_"+day,"{}"));}catch(Exception e){}try{ps=new JSONArray(p.getString("products","[]"));if(ps.length()==0){Iterator<String>i=d.keys();while(i.hasNext())add(i.next(),false);sp();}}catch(Exception e){ps=new JSONArray();}}
- void sd(){p.edit().putString("data_"+day,d.toString()).apply();}void sp(){p.edit().putString("products",ps.toString()).apply();}
- int q(String n){return d.optInt(n,0);}boolean has(String n){for(int i=0;i<ps.length();i++)if(ps.optString(i).equalsIgnoreCase(n))return true;return false;}
- void add(String n,boolean save){if(n.trim().isEmpty()||has(n))return;ps.put(n.trim());if(save)sp();}
- void set(String n,int q){try{if(q<=0)d.remove(n);else d.put(n,q);}catch(Exception e){}sd();refresh();}
- void ui(){
-  LinearLayout r=new LinearLayout(this);r.setOrientation(LinearLayout.VERTICAL);r.setBackgroundColor(Color.rgb(248,250,249));
-  LinearLayout h=new LinearLayout(this);h.setGravity(16);h.setBackgroundColor(Color.rgb(0,105,92));TextView title=t("Memo Tracker",21,true);title.setTextColor(Color.WHITE);title.setPadding(dp(16),0,0,0);h.addView(title,new LinearLayout.LayoutParams(0,dp(58),1));Button pr=b("🖨 Print");h.addView(pr,new LinearLayout.LayoutParams(dp(92),dp(48)));r.addView(h,new LinearLayout.LayoutParams(-1,dp(58)));pr.setOnClickListener(v->printDialog());
-  LinearLayout top=new LinearLayout(this);top.setGravity(16);top.setPadding(dp(14),0,dp(14),0);top.addView(t("📅 "+new SimpleDateFormat("dd MMM yyyy",Locale.US).format(new Date()),14,true),new LinearLayout.LayoutParams(0,dp(52),1));Button ap=b("+ Add Product");ap.setTextSize(12);top.addView(ap,new LinearLayout.LayoutParams(dp(120),dp(44)));r.addView(top);ap.setOnClickListener(v->addDialog());
-  total=t("Total Quantity: 0 pcs",17,true);total.setPadding(dp(14),dp(7),0,dp(10));r.addView(total);ScrollView s=new ScrollView(this);list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);list.setPadding(dp(12),0,dp(12),dp(20));s.addView(list);r.addView(s,new LinearLayout.LayoutParams(-1,0,1));setContentView(r);refresh();
- }
- void addDialog(){EditText e=new EditText(this);e.setHint("Product name");e.setSingleLine();AlertDialog z=new AlertDialog.Builder(this).setTitle("Add Product").setMessage("Add each product only once.").setView(e).setNegativeButton("Cancel",null).setPositiveButton("Add",null).create();z.setOnShowListener(v->z.getButton(-1).setOnClickListener(w->{String n=e.getText().toString().trim();if(n.isEmpty()||has(n)){e.setError(n.isEmpty()?"Enter name":"Already added");return;}add(n,true);z.dismiss();refresh();}));z.show();}
- void qtyDialog(String n){EditText e=new EditText(this);e.setHint("Quantity to add");e.setInputType(2);e.setSingleLine();LinearLayout box=new LinearLayout(this);box.setPadding(dp(24),0,dp(24),0);box.addView(e,new LinearLayout.LayoutParams(-1,dp(55)));AlertDialog z=new AlertDialog.Builder(this).setTitle(n).setMessage("This number will be added to the current quantity.").setView(box).setNegativeButton("Cancel",null).setPositiveButton("Save",null).create();z.setOnShowListener(v->z.getButton(-1).setOnClickListener(w->{try{int n2=Integer.parseInt(e.getText().toString());if(n2<=0)throw new Exception();set(n,q(n)+n2);z.dismiss();}catch(Exception ex){e.setError("Enter a positive number");}}));z.show();}
- void refresh(){list.removeAllViews();int sum=0;for(int i=0;i<ps.length();i++){String n=ps.optString(i);int v=q(n);sum+=v;LinearLayout row=new LinearLayout(this);row.setGravity(16);row.setPadding(dp(12),dp(6),dp(6),dp(6));row.setBackgroundColor(Color.WHITE);TextView name=t(n,16,true);row.addView(name,new LinearLayout.LayoutParams(0,dp(62),1));TextView val=t(v+" pcs",16,true);val.setGravity(17);row.addView(val,new LinearLayout.LayoutParams(dp(78),dp(50)));Button mi=b("−");mi.setTextSize(20);row.addView(mi,new LinearLayout.LayoutParams(dp(48),dp(48)));Button pl=b("+");pl.setTextSize(20);row.addView(pl,new LinearLayout.LayoutParams(dp(48),dp(48)));row.setOnClickListener(x->qtyDialog(n));mi.setOnClickListener(x->set(n,Math.max(0,q(n)-1)));pl.setOnClickListener(x->set(n,q(n)+1));row.setOnLongClickListener(x->{menu(n);return true;});list.addView(row,new LinearLayout.LayoutParams(-1,dp(76)));}total.setText("Total Quantity: "+sum+" pcs");}
- void menu(String n){new AlertDialog.Builder(this).setTitle(n).setItems(new String[]{"Add Quantity","Delete Product"},(dd,w)->{if(w==0)qtyDialog(n);else new AlertDialog.Builder(this).setTitle("Delete "+n+"?").setNegativeButton("Cancel",null).setPositiveButton("Delete",(a,c)->{JSONArray a2=new JSONArray();for(int i=0;i<ps.length();i++)if(!ps.optString(i).equals(n))a2.put(ps.optString(i));ps=a2;MainActivity.this.d.remove(n);sp();sd();refresh();}).show();}).show();}
- void printDialog(){
-  if(Build.VERSION.SDK_INT>=31&&checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.BLUETOOTH_CONNECT,Manifest.permission.BLUETOOTH_SCAN},90);return;}
-  BluetoothAdapter a=BluetoothAdapter.getDefaultAdapter();if(a==null){toast("Bluetooth not supported");return;}if(!a.isEnabled()){toast("Turn on Bluetooth first");return;}
-  ArrayList<BluetoothDevice> ds=new ArrayList<>();for(BluetoothDevice x:a.getBondedDevices())ds.add(x);
-  if(ds.isEmpty()){toast("Pair your 80mm printer in Android Bluetooth settings first");return;}
-  String[] names=new String[ds.size()];for(int i=0;i<ds.size();i++)names[i]=(ds.get(i).getName()==null?"Printer":ds.get(i).getName())+"\n"+ds.get(i).getAddress();
-  new AlertDialog.Builder(this).setTitle("Select 80mm Printer").setItems(names,(d,w)->sendPrint(ds.get(w))).setNegativeButton("Cancel",null).show();
- }
- void sendPrint(BluetoothDevice dev){
-  try{
-   UUID uuid=UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");BluetoothSocket s=dev.createRfcommSocketToServiceRecord(uuid);s.connect();OutputStream o=s.getOutputStream();
-   o.write(new byte[]{27,64});o.write(new byte[]{27,97,1});o.write(("MEMO TRACKER\n").getBytes("UTF-8"));o.write(new byte[]{27,97,0});
-   o.write(("Date: "+new SimpleDateFormat("dd MMM yyyy",Locale.US).format(new Date())+"\n").getBytes("UTF-8"));o.write("--------------------------------\n".getBytes("UTF-8"));
-   int sum=0;for(int i=0;i<ps.length();i++){String n=ps.optString(i);int v=q(n);sum+=v;String line=n+" = "+v+" pcs\n";o.write(line.getBytes("UTF-8"));}o.write("--------------------------------\n".getBytes("UTF-8"));o.write(("TOTAL = "+sum+" pcs\n\n\n").getBytes("UTF-8"));o.write(new byte[]{29,86,66,0});o.flush();s.close();toast("Printed successfully"); 
-  }catch(Exception e){toast("Print failed: "+e.getMessage());}
- }
- void toast(String s){Toast.makeText(this,s,Toast.LENGTH_LONG).show();}
- void history(){ArrayList<String> ds=new ArrayList<>();for(String k:p.getAll().keySet())if(k.startsWith("data_"))ds.add(k.substring(5));Collections.sort(ds,Collections.reverseOrder());LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);for(String x:ds){TextView v=t(x,15,false);v.setPadding(0,dp(10),0,dp(10));box.addView(v);v.setOnClickListener(w->{try{JSONObject o=new JSONObject(p.getString("data_"+x,"{}"));StringBuilder s=new StringBuilder();Iterator<String>i=o.keys();while(i.hasNext()){String n=i.next();s.append(n).append(" = ").append(o.optInt(n)).append(" pcs\n");}new AlertDialog.Builder(this).setTitle(x).setMessage(s.toString()).setPositiveButton("OK",null).show();}catch(Exception e){}});}new AlertDialog.Builder(this).setTitle("History").setView(box).setPositiveButton("Close",null).show();}
+
+import android.app.*;
+import android.os.*;
+import android.content.*;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.net.Uri;
+import android.view.*;
+import android.widget.*;
+import java.io.*;
+import java.util.*;
+
+public class MainActivity extends Activity {
+    LinearLayout modules;
+    android.content.SharedPreferences prefs;
+
+    int dp(int n){ return (int)(n * getResources().getDisplayMetrics().density + .5f); }
+
+    TextView text(String s, float size, boolean bold){
+        TextView v=new TextView(this);
+        v.setText(s); v.setTextSize(size); v.setTextColor(Color.rgb(30,35,40));
+        v.setTypeface(null,bold?1:0); v.setPadding(dp(16),dp(10),dp(16),dp(10));
+        return v;
+    }
+
+    public void onCreate(Bundle b){
+        super.onCreate(b);
+        prefs=getSharedPreferences("modules",0);
+        buildUi();
+    }
+
+    void buildUi(){
+        LinearLayout root=new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(Color.rgb(248,249,251));
+
+        LinearLayout header=new LinearLayout(this);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setBackgroundColor(Color.rgb(25,70,100));
+        TextView title=text("Marki Custom",21,true);
+        title.setTextColor(Color.WHITE);
+        header.addView(title,new LinearLayout.LayoutParams(0,dp(64),1));
+        Button add=new Button(this);
+        add.setText("+ Add APK");
+        add.setAllCaps(false);
+        header.addView(add,new LinearLayout.LayoutParams(dp(120),dp(52)));
+        root.addView(header);
+        add.setOnClickListener(v->pickApk());
+
+        TextView info=text("Add your own compatible modules here. Imported APKs are stored inside Marki Custom; arbitrary APK interfaces cannot be injected directly into another app.",14,false);
+        root.addView(info);
+
+        ScrollView scroll=new ScrollView(this);
+        modules=new LinearLayout(this);
+        modules.setOrientation(LinearLayout.VERTICAL);
+        modules.setPadding(dp(12),dp(4),dp(12),dp(24));
+        scroll.addView(modules);
+        root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+
+        setContentView(root);
+        refresh();
+    }
+
+    void pickApk(){
+        Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        i.setType("application/vnd.android.package-archive");
+        i.addCategory(Intent.CATEGORY_OPENABLE);
+        startActivityForResult(i,77);
+    }
+
+    protected void onActivityResult(int request,int result,Intent data){
+        super.onActivityResult(request,result,data);
+        if(request!=77 || result!=RESULT_OK || data==null || data.getData()==null) return;
+        Uri uri=data.getData();
+        try{
+            String fileName="module_"+System.currentTimeMillis()+".apk";
+            File dir=new File(getFilesDir(),"modules");
+            if(!dir.exists()) dir.mkdirs();
+            File out=new File(dir,fileName);
+            InputStream in=getContentResolver().openInputStream(uri);
+            FileOutputStream os=new FileOutputStream(out);
+            byte[] buf=new byte[8192]; int n;
+            while((n=in.read(buf))!=-1) os.write(buf,0,n);
+            in.close(); os.close();
+
+            PackageManager pm=getPackageManager();
+            PackageInfo pi=pm.getPackageArchiveInfo(out.getAbsolutePath(),PackageManager.GET_META_DATA);
+            if(pi==null){ out.delete(); toast("This file is not a readable Android APK."); return; }
+
+            String label=pi.applicationInfo.loadLabel(pm).toString();
+            String pkg=pi.packageName;
+            long size=out.length();
+
+            String key="module."+System.currentTimeMillis();
+            prefs.edit().putString(key,label+"\n"+pkg+"\n"+pi.versionName+"\n"+size+"\n"+out.getAbsolutePath()).apply();
+            refresh();
+            toast("Module added: "+label);
+        }catch(Exception e){ toast("Could not import APK: "+e.getMessage()); }
+    }
+
+    void refresh(){
+        if(modules==null)return;
+        modules.removeAllViews();
+        Map<String,?> all=prefs.getAll();
+        boolean any=false;
+        for(String key:all.keySet()){
+            if(!key.startsWith("module.")) continue;
+            any=true;
+            String[] a=String.valueOf(all.get(key)).split("\\n",-1);
+            String label=a.length>0?a[0]:"Module";
+            String pkg=a.length>1?a[1]:"";
+            String ver=a.length>2?a[2]:"";
+            String size=a.length>3?a[3]:"0";
+            LinearLayout card=new LinearLayout(this);
+            card.setOrientation(LinearLayout.VERTICAL);
+            card.setBackgroundColor(Color.WHITE);
+            card.setPadding(dp(4),dp(6),dp(4),dp(6));
+            TextView name=text(label,18,true);
+            TextView details=text(pkg+"\nVersion "+ver+" • "+formatSize(size),13,false);
+            card.addView(name); card.addView(details);
+            Button view=new Button(this);
+            view.setText("Module details");
+            view.setAllCaps(false);
+            card.addView(view,new LinearLayout.LayoutParams(-1,dp(46)));
+            view.setOnClickListener(v->details(label,pkg,ver));
+            card.setOnLongClickListener(v->{removeModule(key);return true;});
+            modules.addView(card,new LinearLayout.LayoutParams(-1,dp(150)));
+            Space sp=new Space(this); modules.addView(sp,new LinearLayout.LayoutParams(1,dp(10)));
+        }
+        if(!any){
+            TextView empty=text("No modules yet. Tap “+ Add APK” to import one.",16,false);
+            empty.setGravity(Gravity.CENTER);
+            modules.addView(empty,new LinearLayout.LayoutParams(-1,dp(160)));
+        }
+    }
+
+    String formatSize(String s){
+        try{
+            long n=Long.parseLong(s);
+            if(n<1024)return n+" B";
+            if(n<1024*1024)return (n/1024)+" KB";
+            return (n/(1024*1024))+" MB";
+        }catch(Exception e){return "?";}
+    }
+
+    void details(String label,String pkg,String ver){
+        new AlertDialog.Builder(this).setTitle(label)
+            .setMessage("Package: "+pkg+"\nVersion: "+ver+"\n\nThis APK is stored as a Marki Custom module. To show its real interface inside Marki Custom, the source app must be converted to the Marki module contract.")
+            .setPositiveButton("OK",null).show();
+    }
+
+    void removeModule(String key){
+        new AlertDialog.Builder(this).setTitle("Remove module?")
+            .setMessage("This removes the imported module from Marki Custom.")
+            .setNegativeButton("Cancel",null)
+            .setPositiveButton("Remove",(d,w)->{
+                Object v=prefs.getAll().get(key);
+                if(v!=null){
+                    String[] a=String.valueOf(v).split("\\n",-1);
+                    if(a.length>4)new File(a[4]).delete();
+                }
+                prefs.edit().remove(key).apply();
+                refresh();
+            }).show();
+    }
+
+    void toast(String s){ Toast.makeText(this,s,Toast.LENGTH_LONG).show(); }
 }
