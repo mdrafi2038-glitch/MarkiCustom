@@ -3,15 +3,15 @@ plugins {
 }
 
 android {
-    namespace = "com.memotracker.app"
+    namespace = "com.markicustom.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.memotracker.app"
+        applicationId = "com.markicustom.app"
         minSdk = 23
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "2.0"
     }
 
     java {
