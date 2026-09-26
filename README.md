@@ -1,10 +1,5 @@
-# Sales Tracker App
+# Marki Custom
 
-Android app for sales planning and product-wise sales calculations.
+Modular APK container prototype.
 
-Features:
-- Sales Planning Maker
-- Product Wise Sales
-- Product Setup
-
-The app is built by GitHub Actions and produces a debug APK artifact.
+Imported APK files can be stored and represented as modules. Arbitrary third-party APK UIs cannot be safely injected into another APK; compatible functionality should be implemented as modules/plugins.
